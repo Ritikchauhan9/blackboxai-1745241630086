@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeCrypt - Secure Encryption Tool</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- CryptoJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .tab-active {
+            border-bottom: 2px solid #3B82F6;
+            color: #3B82F6;
+        }
+        .history-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex justify-between items-center">
+                <h1 class="text-3xl font-bold text-blue-600">SafeCrypt</h1>
+                <button id="historyBtn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
+                    <i class="fas fa-history mr-2"></i>History
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Encrypt Section -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold mb-6">Encrypt</h2>
+                
+                <!-- Data Type Selection -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2">Select Type:</label>
+                    <div class="flex space-x-4">
+                        <button class="tab-btn tab-active px-4 py-2" data-type="text">Text</button>
+                        <button class="tab-btn px-4 py-2" data-type="link">Link</button>
+                        <button class="tab-btn px-4 py-2" data-type="phone">Phone</button>
+                        <button class="tab-btn px-4 py-2" data-type="password">Password</button>
+                    </div>
+                </div>
+
+                <!-- Input Fields -->
+                <div class="space-y-4">
+                    <!-- Text Input -->
+                    <div class="input-group" id="text-input">
+                        <label class="block text-gray-700 mb-2">Enter text to encrypt</label>
+                        <textarea id="encrypt-input" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" rows="4"></textarea>
+                    </div>
+
+                    <!-- Phone Input (Hidden by default) -->
+                    <div class="input-group hidden" id="phone-input">
+                        <label class="block text-gray-700 mb-2">Country Code</label>
+                        <input type="text" id="country-code" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 mb-2" placeholder="+1">
+                        <label class="block text-gray-700 mb-2">Phone Number</label>
+                        <input type="tel" id="phone-number" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Secret Key -->
+                    <div class="relative">
+                        <label class="block text-gray-700 mb-2">Secret Key (Optional)</label>
+                        <div class="relative">
+                            <input type="password" id="encrypt-key" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 pr-10">
+                            <button class="toggle-password absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                <i class="far fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div id="encrypt-error" class="text-red-500 hidden"></div>
+
+                    <!-- Buttons -->
+                    <div class="flex space-x-4">
+                        <button id="encryptBtn" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition">
+                            Encrypt
+                        </button>
+                        <button id="copyEncrypted" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition hidden">
+                            <i class="far fa-copy mr-2"></i>Copy
+                        </button>
+                    </div>
+
+                    <!-- Result -->
+                    <div id="encrypt-result" class="mt-4 p-4 bg-gray-100 rounded-lg hidden">
+                        <label class="block text-gray-700 mb-2">Encrypted Result:</label>
+                        <p id="encrypted-text" class="break-all"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decrypt Section -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold mb-6">Decrypt</h2>
+                
+                <div class="space-y-4">
+                    <!-- Encrypted Input -->
+                    <div>
+                        <label class="block text-gray-700 mb-2">Enter text to decrypt</label>
+                        <textarea id="decrypt-input" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" rows="4"></textarea>
+                    </div>
+
+                    <!-- Secret Key -->
+                    <div class="relative">
+                        <label class="block text-gray-700 mb-2">Secret Key (if used during encryption)</label>
+                        <div class="relative">
+                            <input type="password" id="decrypt-key" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 pr-10">
+                            <button class="toggle-password absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                <i class="far fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div id="decrypt-error" class="text-red-500 hidden"></div>
+
+                    <!-- Buttons -->
+                    <div class="flex space-x-4">
+                        <button id="decryptBtn" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition">
+                            Decrypt
+                        </button>
+                        <button id="copyDecrypted" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition hidden">
+                            <i class="far fa-copy mr-2"></i>Copy
+                        </button>
+                    </div>
+
+                    <!-- Result -->
+                    <div id="decrypt-result" class="mt-4 p-4 bg-gray-100 rounded-lg hidden">
+                        <label class="block text-gray-700 mb-2">Decrypted Result:</label>
+                        <p id="decrypted-text" class="break-all"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="history-modal">
+        <div class="fixed inset-0 flex items-center justify-center">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl m-4 max-h-[80vh] overflow-hidden">
+                <div class="p-6 border-b">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-2xl font-semibold">History</h3>
+                        <button id="closeHistory" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6 overflow-y-auto max-h-[60vh]">
+                    <div id="historyContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div id="passwordModal" class="history-modal">
+        <div class="fixed inset-0 flex items-center justify-center">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md m-4">
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold mb-4">Enter Password</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700 mb-2">Password</label>
+                            <input type="password" id="historyPassword" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div id="passwordError" class="text-red-500 hidden"></div>
+                        <div class="flex justify-end space-x-4">
+                            <button id="cancelPassword" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                                Cancel
+                            </button>
+                            <button id="submitPassword" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition">
+                                Submit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t mt-8">
+        <div class="container mx-auto px-4 py-6">
+            <p class="text-center text-gray-600">© 2024 SafeCrypt ~By Ritik. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+</body>
+</html>
